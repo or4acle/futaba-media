@@ -1,23 +1,43 @@
 import os
 import json
+import sys
 
-# Pastas de categorias no repositório de mídia
-categorias = ['normal', 'oracle', 'misc', 'ren_futaba']
-lista_final = []
+EXTENSOES_VALIDAS = ('.png', '.jpg', '.jpeg', '.webm', '.webp', '.gif')
 
-for categoria in categorias:
-    if os.path.isdir(categoria):
-        for arquivo in os.listdir(categoria):
-            # Filtra apenas imagens e vídeos válidos
-            if arquivo.lower().endswith(('.png', '.jpg', '.jpeg', '.webm', '.webp', '.gif')):
+def gerar_lista(diretorio='.'):
+    categorias = sorted([
+        d for d in os.listdir(diretorio)
+        if os.path.isdir(os.path.join(diretorio, d)) and not d.startswith('.')
+    ])
+
+    if not categorias:
+        print("Nenhuma pasta de categorias encontrada.")
+        sys.exit(1)
+
+    lista_final = []
+
+    for categoria in categorias:
+        caminho_cat = os.path.join(diretorio, categoria)
+        ficheiros = sorted(os.listdir(caminho_cat))
+
+        for arquivo in ficheiros:
+            if arquivo.lower().endswith(EXTENSOES_VALIDAS):
                 lista_final.append({
                     "nome": arquivo,
                     "categoria": categoria,
                     "caminho": f"{categoria}/{arquivo}"
                 })
 
-# Guarda o fotos.json na raiz do repositório de mídia
-with open('fotos.json', 'w', encoding='utf-8') as f:
-    json.dump(lista_final, f, ensure_ascii=False, indent=4)
+    lista_final.sort(key=lambda x: (x['categoria'], x['nome']))
 
-print(f"eba deu certo {len(lista_final)} ficheiros encontrados e listados em fotos.json")
+    output = os.path.join(diretorio, 'fotos.json')
+    with open(output, 'w', encoding='utf-8') as f:
+        json.dump(lista_final, f, ensure_ascii=False, indent=4)
+
+    print(f"{len(lista_final)} ficheiros listados em {output}")
+    for cat in categorias:
+        n = sum(1 for i in lista_final if i['categoria'] == cat)
+        print(f"  {cat}: {n}")
+
+if __name__ == '__main__':
+    gerar_lista()
